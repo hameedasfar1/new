@@ -1,58 +1,59 @@
-<!-- index.blade.php -->
-
-<!DOCTYPE html>
+<?php
+ 
+$dataPoints = array();
+//Best practice is to create a separate file for handling connection to database
+try{
+     // Creating a new connection.
+    // Replace your-hostname, your-db, your-username, your-password according to your database
+    $link = new \PDO(   'mysql:host=localhost;dbname=laravel_project;charset=utf8mb4', //'mysql:host=localhost;dbname=canvasjs_db;charset=utf8mb4',
+                        'root',
+                        '',
+                        array(
+                            \PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                            \PDO::ATTR_PERSISTENT => false
+                        )
+                    );
+	
+    $handle = $link->prepare('select x, y  from datapoints'); 
+    $handle->execute(); 
+    $result = $handle->fetchAll(\PDO::FETCH_OBJ);
+		
+    foreach($result as $row){
+        array_push($dataPoints, array("x"=> $row->x, "y"=> $row->y));
+    }
+	$link = null;
+}
+catch(\PDOException $ex){
+    print($ex->getMessage());
+}
+	
+?>
+<!DOCTYPE HTML>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Index Page</title>
-    <link rel="stylesheet" href="{{asset('css/app.css')}}">
-  </head>
-  <body>
-    <div class="container">
-    <br />
-    @if (\Session::has('success'))
-      <div class="alert alert-success">
-        <p>{{ \Session::get('success') }}</p>
-      </div><br />
-     @endif
-    <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Date</th>
-        <th>Email</th>
-        <th>Phone Number</th>
-        <th>Passport Office</th>
-        <th colspan="2">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      
-      @foreach($passports as $passport)
-      @php
-        $date=date('Y-m-d', $passport['date']);
-        @endphp
-      <tr>
-        <td>{{$passport['id']}}</td>
-        <td>{{$passport['name']}}</td>
-        <td>{{$date}}</td>
-        <td>{{$passport['email']}}</td>
-        <td>{{$passport['number']}}</td>
-        <td>{{$passport['office']}}</td>
-        
-        <td><a href="{{action('PassportController@edit', $passport['id'])}}" class="btn btn-warning">Edit</a></td>
-        <td>
-          <form action="{{action('PassportController@destroy', $passport['id'])}}" method="post">
-            @csrf
-            <input name="_method" type="hidden" value="DELETE">
-            <button class="btn btn-danger" type="submit">Delete</button>
-          </form>
-        </td>
-      </tr>
-      @endforeach
-    </tbody>
-  </table>
-  </div>
-  </body>
+<head>  
+<script>
+window.onload = function () {
+ 
+var chart = new CanvasJS.Chart("chartContainer", {
+	animationEnabled: true,
+	exportEnabled: true,
+	theme: "light1", // "light1", "light2", "dark1", "dark2"
+	title:{
+		text: "PHP Column Chart from Database"
+	},
+	data: [{
+		type: "column", //change type to bar, line, area, pie, etc  
+		dataPoints: <?php echo json_encode($dataPoints, JSON_NUMERIC_CHECK); ?>
+	}]
+});
+chart.render();
+ 
+}
+</script>
+</head>
+<body>
+<div id="chartContainer" style="height: 370px; width: 100%;"></div>
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+</body>
 </html>
+   
